@@ -222,9 +222,17 @@ bool addSubToForwardingTable(int socketID, char *sub){
 }
 
 void *connectionHandler(void *sock){
+	string lastRequest, aux;
+	int repeatedRequests = 0;
 	int socketID = *((int*)sock);
 	char input[MAX_LINE]; 
 	while(1){
+		if(repeatedRequests > 1000){
+			perror("Something bad happened");
+			close(socketID);
+			pthread_exit(NULL);
+			break;
+		}
 		memset(input, '\0', sizeof(input));
 		int callType;
 		if(recv(socketID, input, sizeof(input), 0) < 0){
@@ -233,22 +241,29 @@ void *connectionHandler(void *sock){
 			pthread_exit(NULL);
 			break;
 		}
+		aux = string(input);
+		if(lastRequest != aux){
+			lastRequest = aux;
+			repeatedRequests = 0;
+		}
+		else{
+			repeatedRequests++;
+		}
 		sscanf(input, "%d", &callType);
-		//pthread_t newThread;
 		if(callType == 0){ //Publish
-			//pthread_create(&newThread, NULL, publish, (void *)(input+2));
 			operationCounter++;
+			cout << "I'm publishing\n";
 			publish(socketID, (void *)(input+2));
-			//forwardPublication(socketID, (input+2));
 		}
 		else if(callType == 1){ //Subscribe
-			//pthread_create(&newThread, NULL, subscribe, (void *)(input+2));
 			operationCounter++;
+			cout << "I'm subscribing\n";
 			if(subscribe(socketID, (input+2))) 
 				sendSubToNeighbors(socketID, (input+2));
 		}
 		else if(callType == 2){ //Request Interest List
 			operationCounter++;
+			cout << "I'm requesting interests\n";
 			sendInterestList(socketID);
 		}
 		else if(callType == 3){ //Received Subscription from another Broker
