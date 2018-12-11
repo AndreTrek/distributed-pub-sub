@@ -252,21 +252,19 @@ void *connectionHandler(void *sock){
 		sscanf(input, "%d", &callType);
 		if(callType == 0){ //Publish
 			operationCounter++;
-			cout << "I'm publishing\n";
 			publish(socketID, (void *)(input+2));
 		}
 		else if(callType == 1){ //Subscribe
 			operationCounter++;
-			cout << "I'm subscribing\n";
 			if(subscribe(socketID, (input+2))) 
 				sendSubToNeighbors(socketID, (input+2));
 		}
 		else if(callType == 2){ //Request Interest List
 			operationCounter++;
-			cout << "I'm requesting interests\n";
 			sendInterestList(socketID);
 		}
 		else if(callType == 3){ //Received Subscription from another Broker
+			operationCounter++;
 			if(addSubToForwardingTable(socketID, (input+2)))
 				sendSubToNeighbors(socketID, (input+2));
 		}
